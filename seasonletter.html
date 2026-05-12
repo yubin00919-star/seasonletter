@@ -6,52 +6,93 @@
     <title>마피아42 엽서 관리 Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <style>
+        /* 기존 스타일 유지 */
+        :root {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --border: rgba(255,255,255,0.05);
+            --input-bg: #0f172a;
+        }
+
+        body.light-mode {
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --border: rgba(0,0,0,0.1);
+            --input-bg: #f1f5f9;
+        }
+
         * { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
-        body { background:#0f172a; color:#f1f5f9; padding:16px; padding-bottom:100px; }
+        body { background: var(--bg-body); color: var(--text-main); padding:16px; padding-bottom:100px; }
         .container { max-width:460px; margin:auto; }
-        .header { margin-bottom: 20px; }
-        .title { font-size:24px; font-weight:800; color:#f8fafc; }
-        .sub { color:#94a3b8; font-size:14px; }
-        .card { background:#1e293b; border-radius:18px; padding:16px; margin-bottom:14px; border: 1px solid rgba(255,255,255,0.05); }
+       
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .title { font-size:24px; font-weight:800; }
+        .theme-toggle { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 8px 12px; border-radius: 12px; cursor: pointer; font-size: 12px; font-weight: 700; }
+
+        .card { background: var(--bg-card); border-radius:18px; padding:16px; margin-bottom:14px; border: 1px solid var(--border); }
         .stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
-        .stat { background:#1e293b; padding:15px; border-radius:16px; border:1px solid rgba(255,255,255,0.1); text-align:center; }
-        .label { font-size:12px; color:#94a3b8; margin-bottom:4px; }
+        .stat { background: var(--bg-card); padding:15px; border-radius:16px; border:1px solid var(--border); text-align:center; }
+        .label { font-size:12px; color: var(--text-sub); margin-bottom:4px; }
         .value { font-size:20px; font-weight:800; color:#38bdf8; }
+
         .menu-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px; }
-        .menu-card { background:#fff; color:#1e293b; padding:12px 8px; border-radius:14px; text-align:center; cursor:pointer; border-top:4px solid #ccc; transition: 0.2s; }
+        .menu-card { padding:15px 8px; border-radius:14px; text-align:center; cursor:pointer; transition: 0.2s; border: 1px solid rgba(0,0,0,0.05); }
         .menu-card:active { transform: scale(0.95); }
-        .menu-card div { font-size:12px; font-weight:700; margin-top:5px; }
-        .menu-card span { font-size:10px; color:#64748b; }
-        .input, select { width:100%; background:#0f172a; border:1px solid #334155; padding:12px; border-radius:12px; margin-top:8px; font-size:14px; color:white; }
+       
+        .m-세배 { background: linear-gradient(135deg, #fef3c7 0%, #fcd34d 100%); color: #92400e; }
+        .m-4기 { background: linear-gradient(135deg, #ede9fe 0%, #a78bfa 100%); color: #5b21b6; }
+        .m-고귀 { background: linear-gradient(135deg, #f0f9ff 0%, #7dd3fc 100%); color: #075985; }
+       
+        .menu-card div { font-size:13px; font-weight:800; margin-top:5px; }
+        .menu-card span { font-size:10px; opacity: 0.8; }
+
+        .input, select { width:100%; background: var(--input-bg); border:1px solid var(--border); padding:12px; border-radius:12px; margin-top:8px; font-size:14px; color: var(--text-main); }
         .checkbox-row { display:flex; gap:8px; margin-top:15px; flex-wrap:wrap; }
-        .check-label { background:#334155; padding:10px 14px; border-radius:12px; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px; color:#e2e8f0; flex:1; justify-content:center; }
+        .check-label { background: var(--bg-card); border: 1px solid var(--border); padding:10px 14px; border-radius:12px; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px; color: var(--text-main); flex:1; justify-content:center; }
+       
         .btn { width:100%; border:none; padding:13px; border-radius:12px; font-weight:700; margin-top:15px; cursor:pointer; }
         .primary { background:#2563eb; color:white; }
         .green { background:#059669; color:white; }
         .orange { background:#d97706; color:white; }
         .red { background:#b91c1c; color:white; margin-top:5px; font-size:12px; padding:8px; }
-        .delete-btn { background:#ef4444; color:white; padding:4px 8px; border-radius:6px; font-size:10px; border:none; }
-        .partial-input-box { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:5px; margin-top:10px; padding:10px; background:#0f172a; border-radius:10px; }
-        .partial-input-box label { font-size:11px; color:#94a3b8; display:block; margin-bottom:3px; }
-        .partial-input-box input { width:100%; background:#1e293b; border:1px solid #334155; color:white; padding:5px; border-radius:5px; font-size:12px; text-align:center; }
-        .list-item { background:#1e293b; padding:15px; border-radius:16px; margin-top:10px; border:1px solid rgba(255,255,255,0.05); }
+       
+        .batch-btn { background:#34d399; color:#064e3b; padding:4px 8px; border-radius:6px; font-size:10px; border:none; font-weight: 700; cursor: pointer; }
+        .delete-btn { background:#ef4444; color:white; padding:4px 8px; border-radius:6px; font-size:10px; border:none; cursor: pointer; }
+       
+        .partial-input-box { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:5px; margin-top:10px; padding:10px; background: rgba(0,0,0,0.1); border-radius:10px; }
+        .partial-input-box label { font-size:11px; color: var(--text-sub); display:block; margin-bottom:3px; }
+        .partial-input-box input { width:100%; background: var(--bg-card); border:1px solid var(--border); color: var(--text-main); padding:5px; border-radius:5px; font-size:12px; text-align:center; }
+       
+        .list-item { background: var(--bg-card); padding:15px; border-radius:16px; margin-top:10px; border: 1px solid var(--border); }
         .status-badge { display:inline-block; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; margin-bottom:5px; }
         .status-미완료 { background:#451a1a; color:#f87171; }
         .status-완료 { background:#064e3b; color:#34d399; }
         .status-일부지급 { background:#451a03; color:#fbbf24; }
-        .nav-bar { position:fixed; bottom:0; left:0; right:0; background:#1e293b; display:flex; justify-content:space-around; padding:12px; border-top:1px solid #334155; z-index:100; }
-        .nav-item { text-align:center; font-size:11px; color:#64748b; cursor:pointer; flex:1; }
+
+        .nav-bar { position:fixed; bottom:0; left:0; right:0; background: var(--bg-card); display:flex; justify-content:space-around; padding:12px; border-top:1px solid var(--border); z-index:100; }
+        .nav-item { text-align:center; font-size:11px; color: var(--text-sub); cursor:pointer; flex:1; }
         .nav-item.active { color:#38bdf8; font-weight:700; }
         .page { display:none; }
         .page.active { display:block; }
+
+        .sort-bar { display: flex; gap: 8px; margin-bottom: 10px; }
+        .sort-btn { flex: 1; padding: 6px; font-size: 11px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text-sub); cursor: pointer; }
+        .sort-btn.active { border-color: #38bdf8; color: #38bdf8; font-weight: 700; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <div class="title">📮시말 엽서 판매📮</div>
-        <div class="sub">시말 엽서 판매 시스템</div>
+        <div>
+            <div class="title">👸혜라👸</div>
+            <div style="color:var(--text-sub); font-size:14px;">시말 엽서 관리 시스템</div>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()">🌓 모드 변경</button>
     </div>
 
     <div id="page-home" class="page active">
@@ -66,22 +107,22 @@
             <div style="font-weight:700; margin-bottom:5px;">새 거래 추가</div>
             <input class="input" id="nickname" placeholder="상대방 닉네임 입력">
             <div class="checkbox-row" id="type-group">
-                <label class="check-label"><input type="checkbox" value="세배"> 💌 세배</label>
-                <label class="check-label"><input type="checkbox" value="4기"> 💌 4기</label>
-                <label class="check-label"><input type="checkbox" value="고귀"> 💌 고귀</label>
+                <label class="check-label"><input type="checkbox" value="세배"> 🧧 세배</label>
+                <label class="check-label"><input type="checkbox" value="4기"> 💜 4기</label>
+                <label class="check-label"><input type="checkbox" value="고귀"> 💎 고귀</label>
             </div>
             <button class="btn primary" onclick="addItem()">목록에 추가하기</button>
         </div>
 
         <div class="menu-grid">
-            <div class="menu-card" style="border-top-color: #f472b6;" onclick="filterList('세배')">
-                💌<div>세배</div><span id="m-count-세배">0건</span>
+            <div class="menu-card m-세배" onclick="filterList('세배')">
+                🧧<div>세배</div><span id="m-count-세배">0건</span>
             </div>
-            <div class="menu-card" style="border-top-color: #fbbf24;" onclick="filterList('4기')">
-                💌<div>4기</div><span id="m-count-4기">0건</span>
+            <div class="menu-card m-4기" onclick="filterList('4기')">
+                💜<div>4기</div><span id="m-count-4기">0건</span>
             </div>
-            <div class="menu-card" style="border-top-color: #a78bfa;" onclick="filterList('고귀')">
-                💌<div>고귀</div><span id="m-count-고귀">0건</span>
+            <div class="menu-card m-고귀" onclick="filterList('고귀')">
+                💎<div>고귀</div><span id="m-count-고귀">0건</span>
             </div>
         </div>
 
@@ -97,6 +138,11 @@
     </div>
 
     <div id="page-list" class="page">
+        <div class="sort-bar">
+            <button class="sort-btn active" id="sort-new" onclick="setSort('new')">최신순</button>
+            <button class="sort-btn" id="sort-old" onclick="setSort('old')">과거순</button>
+            <button class="sort-btn" id="sort-name" onclick="setSort('name')">이름순</button>
+        </div>
         <input type="text" id="searchInput" class="input" style="margin-bottom:10px; border-color:#38bdf8;" placeholder="닉네임으로 검색..." oninput="render()">
         <div class="card" id="detail-stats" style="padding:12px; font-size:12px; display:flex; flex-wrap:wrap; gap:10px; justify-content:space-around; background: rgba(56, 189, 248, 0.05);">
             <div>전체: <b id="d-all">0</b></div>
@@ -111,15 +157,16 @@
 
 <nav class="nav-bar">
     <div class="nav-item active" id="nav-home" onclick="showPage('home')">🏠<br>홈</div>
-    <div class="nav-item" id="nav-세배" onclick="filterList('세배')">💌<br>세배</div>
-    <div class="nav-item" id="nav-4기" onclick="filterList('4기')">💌<br>4기</div>
-    <div class="nav-item" id="nav-고귀" onclick="filterList('고귀')">💌<br>고귀</div>
+    <div class="nav-item" id="nav-세배" onclick="filterList('세배')">🧧<br>세배</div>
+    <div class="nav-item" id="nav-4기" onclick="filterList('4기')">💜<br>4기</div>
+    <div class="nav-item" id="nav-고귀" onclick="filterList('고귀')">💎<br>고귀</div>
     <div class="nav-item" id="nav-전체" onclick="filterList('전체')">📊<br>통합</div>
 </nav>
 
 <script>
 let data = JSON.parse(localStorage.getItem('postcardManager')) || [];
 let currentFilter = '전체';
+let currentSort = 'new';
 
 const priceRules = {
     "세배": { gam: 1, ju: 1, go: 0 },
@@ -130,6 +177,26 @@ const priceRules = {
 function save() { localStorage.setItem('postcardManager', JSON.stringify(data)); }
 function resetAllData() { if(confirm('모든 데이터를 삭제할까요?')) { data = []; save(); render(); } }
 
+function toggleTheme() {
+    document.body.classList.toggle('light-mode');
+}
+
+function setSort(sortType) {
+    currentSort = sortType;
+    document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('sort-' + sortType).classList.add('active');
+    render();
+}
+
+function batchComplete(nick) {
+    if(confirm(`[${nick}] 유저의 모든 미완료 내역을 완료 처리하시겠습니까?`)) {
+        data.forEach(item => {
+            if(item.nickname === nick) item.status = '완료';
+        });
+        save(); render();
+    }
+}
+
 function showPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -137,10 +204,21 @@ function showPage(pageId) {
     if(pageId === 'home') document.getElementById('nav-home').classList.add('active');
 }
 
+// [수정] addItem 함수에 중복 체크 시스템 추가
 function addItem() {
     const nick = document.getElementById('nickname').value.trim();
     const selectedTypes = Array.from(document.querySelectorAll('#type-group input:checked')).map(cb => cb.value);
+   
     if (selectedTypes.length === 0 || !nick) { alert('닉네임과 종류를 선택하세요!'); return; }
+   
+    // 중복 체크 로직
+    const isDuplicate = data.some(item => item.nickname === nick);
+    if (isDuplicate) {
+        if (!confirm(`⚠️ [${nick}]님은 이미 목록에 존재합니다. 추가로 등록하시겠습니까?`)) {
+            return; // 취소 시 함수 종료
+        }
+    }
+
     selectedTypes.forEach(type => {
         data.unshift({
             id: Date.now() + Math.random(),
@@ -149,7 +227,7 @@ function addItem() {
             amount: 1,
             status: '미완료',
             p_gam: 0, p_ju: 0, p_go: 0,
-            date: new Date().toLocaleString()
+            date: new Date().toISOString()
         });
     });
     save(); render();
@@ -211,7 +289,12 @@ function render() {
     document.getElementById('m-count-4기').innerText = data.filter(v => v.type === '4기').length + '건';
     document.getElementById('m-count-고귀').innerText = data.filter(v => v.type === '고귀').length + '건';
 
-    const base = data.filter(v => v.nickname.toLowerCase().includes(search));
+    let base = data.filter(v => v.nickname.toLowerCase().includes(search));
+
+    if (currentSort === 'new') base.sort((a, b) => new Date(b.date) - new Date(a.date));
+    else if (currentSort === 'old') base.sort((a, b) => new Date(a.date) - new Date(b.date));
+    else if (currentSort === 'name') base.sort((a, b) => a.nickname.localeCompare(b.nickname));
+
     const tabData = currentFilter === '전체' ? base : base.filter(v => v.type === currentFilter);
 
     document.getElementById('d-all').innerText = tabData.length;
@@ -224,7 +307,6 @@ function render() {
             if (!acc[curr.nickname]) acc[curr.nickname] = { list: [], totalGam: 0, totalJu: 0, totalGo: 0 };
             acc[curr.nickname].list.push(curr);
            
-            // 지급완료면 0, 아니면 계산 (미완료/일부지급 동일하게 차감식 적용)
             if (curr.status !== '완료') {
                 const rule = priceRules[curr.type] || {gam:0, ju:0, go:0};
                 acc[curr.nickname].totalGam += (rule.gam * curr.amount) - (curr.p_gam || 0);
@@ -241,9 +323,12 @@ function render() {
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <span style="font-weight:800; color:#38bdf8; font-size:15px;">👤 ${nick}</span>
-                    <button class="delete-btn" onclick="deleteUser('${nick}')">전체삭제</button>
+                    <div style="display:flex; gap:5px;">
+                        <button class="batch-btn" onclick="batchComplete('${nick}')">일괄완료</button>
+                        <button class="delete-btn" onclick="deleteUser('${nick}')">전체삭제</button>
+                    </div>
                 </div>
-                <div style="font-size:12px; color:#cbd5e1;">
+                <div style="font-size:12px; color: var(--text-sub);">
                     ${user.list.map(it => `<div style="margin-bottom:4px;">• ${it.type} [${it.status}]</div>`).join('')}
                     <div style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.2); border-radius:10px; color:#fbbf24;">
                         <b>💰 남은 정산:</b> 깜 ${user.totalGam} / 주 ${user.totalJu} / 고 ${user.totalGo}
@@ -255,7 +340,6 @@ function render() {
     } else {
         tabData.forEach(item => {
             const rule = priceRules[item.type] || {gam:0, ju:0, go:0};
-            // 상태가 완료면 0으로 강제 고정, 아니면 수식 적용
             const isDone = item.status === '완료';
             const leftGam = isDone ? 0 : (rule.gam * item.amount) - item.p_gam;
             const leftJu = isDone ? 0 : (rule.ju * item.amount) - item.p_ju;
