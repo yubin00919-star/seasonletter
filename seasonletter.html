@@ -6,7 +6,7 @@
     <title>마피아42 엽서 관리 Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <style>
-        /* 기존 스타일 유지 */
+        /* 기본 테마 및 변수 */
         :root {
             --bg-body: #0f172a;
             --bg-card: #1e293b;
@@ -83,16 +83,16 @@
         .sort-btn { flex: 1; padding: 6px; font-size: 11px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text-sub); cursor: pointer; }
         .sort-btn.active { border-color: #38bdf8; color: #38bdf8; font-weight: 700; }
 
-        /* [추가] 커스텀 모달 스타일 */
+        /* 커스텀 모달 디자인 */
         #customModal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; padding: 20px;
         }
         .modal-content {
             background: var(--bg-card); border-radius: 20px; padding: 24px; width: 100%; max-width: 340px;
-            text-align: center; border: 1px solid var(--border);
+            text-align: center; border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         }
-        .modal-text { margin-bottom: 24px; font-size: 15px; line-height: 1.5; color: var(--text-main); }
+        .modal-text { margin-bottom: 24px; font-size: 15px; line-height: 1.5; color: var(--text-main); word-break: keep-all; }
         .modal-btns { display: flex; gap: 10px; }
         .modal-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-size: 14px; }
         .btn-confirm { background: #2563eb; color: white; }
@@ -101,13 +101,13 @@
 </head>
 <body>
 
-<!-- [추가] 커스텀 모달 레이아웃 -->
+<!-- 커스텀 모달 레이아웃 -->
 <div id="customModal">
     <div class="modal-content">
         <div class="modal-text" id="modalMessage">메시지 내용</div>
-        <div class="modal-btns">
+        <div class="modal-btns" id="modalBtnGroup">
             <button class="modal-btn btn-confirm" id="confirmAction">확인</button>
-            <button class="modal-btn btn-cancel" onclick="closeModal()">취소</button>
+            <button class="modal-btn btn-cancel" id="cancelAction" onclick="closeModal()">취소</button>
         </div>
     </div>
 </div>
@@ -194,15 +194,18 @@ const priceRules = {
     "고귀": { gam: 1, ju: 0, go: 1 }
 };
 
-// [추가] 모달 제어 로직
-function askConfirm(msg, callback) {
+// 모달 제어 함수 (showCancel 파라미터 추가로 단순 알림/선택창 구분)
+function askConfirm(msg, callback, showCancel = true) {
     document.getElementById('modalMessage').innerText = msg;
     document.getElementById('customModal').style.display = 'flex';
+    document.getElementById('cancelAction').style.display = showCancel ? 'block' : 'none';
+   
     document.getElementById('confirmAction').onclick = function() {
-        callback();
+        if (callback) callback();
         closeModal();
     };
 }
+
 function closeModal() { document.getElementById('customModal').style.display = 'none'; }
 
 function save() { localStorage.setItem('postcardManager', JSON.stringify(data)); }
@@ -234,7 +237,10 @@ function addItem() {
     const nick = document.getElementById('nickname').value.trim();
     const selectedTypes = Array.from(document.querySelectorAll('#type-group input:checked')).map(cb => cb.value);
    
-    if (selectedTypes.length === 0 || !nick) { alert('닉네임과 종류를 선택하세요!'); return; }
+    if (selectedTypes.length === 0 || !nick) {
+        askConfirm('닉네임과 종류를 선택해주세요!', null, false);
+        return;
+    }
    
     const isDuplicate = data.some(item => item.nickname === nick);
     if (isDuplicate) {
@@ -255,6 +261,10 @@ function executeAdd(nick, selectedTypes) {
         });
     });
     save(); render();
+   
+    // 안내창 띄우기
+    askConfirm('성공적으로 추가되었습니다! 🎉', null, false);
+   
     document.getElementById('nickname').value = '';
     document.querySelectorAll('#type-group input').forEach(cb => cb.checked = false);
 }
