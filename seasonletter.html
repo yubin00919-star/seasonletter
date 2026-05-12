@@ -54,7 +54,6 @@
         .checkbox-row { display:flex; gap:8px; margin-top:15px; flex-wrap:wrap; }
         .check-label { background: var(--bg-card); border: 1px solid var(--border); padding:10px 14px; border-radius:12px; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px; color: var(--text-main); flex:1; justify-content:center; }
        
-        /* 버튼 스타일 통합 */
         .btn { width:100%; border:none; padding:13px; border-radius:12px; font-weight:700; margin-top:15px; cursor:pointer; font-size:14px; }
         .primary { background:#2563eb; color:white; }
         .green { background:#059669; color:white; }
@@ -83,9 +82,35 @@
         .sort-bar { display: flex; gap: 8px; margin-bottom: 10px; }
         .sort-btn { flex: 1; padding: 6px; font-size: 11px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text-sub); cursor: pointer; }
         .sort-btn.active { border-color: #38bdf8; color: #38bdf8; font-weight: 700; }
+
+        /* [추가] 커스텀 모달 스타일 */
+        #customModal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; padding: 20px;
+        }
+        .modal-content {
+            background: var(--bg-card); border-radius: 20px; padding: 24px; width: 100%; max-width: 340px;
+            text-align: center; border: 1px solid var(--border);
+        }
+        .modal-text { margin-bottom: 24px; font-size: 15px; line-height: 1.5; color: var(--text-main); }
+        .modal-btns { display: flex; gap: 10px; }
+        .modal-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-size: 14px; }
+        .btn-confirm { background: #2563eb; color: white; }
+        .btn-cancel { background: var(--input-bg); color: var(--text-sub); border: 1px solid var(--border); }
     </style>
 </head>
 <body>
+
+<!-- [추가] 커스텀 모달 레이아웃 -->
+<div id="customModal">
+    <div class="modal-content">
+        <div class="modal-text" id="modalMessage">메시지 내용</div>
+        <div class="modal-btns">
+            <button class="modal-btn btn-confirm" id="confirmAction">확인</button>
+            <button class="modal-btn btn-cancel" onclick="closeModal()">취소</button>
+        </div>
+    </div>
+</div>
 
 <div class="container">
     <div class="header">
@@ -106,7 +131,7 @@
 
         <div class="card">
             <div style="font-weight:700; margin-bottom:5px;">새 거래 추가</div>
-            <input class="input" id="nickname" placeholder="닉네임 입력">
+            <input class="input" id="nickname" placeholder="상대방 닉네임 입력">
             <div class="checkbox-row" id="type-group">
                 <label class="check-label"><input type="checkbox" value="세배"> 🧧 세배</label>
                 <label class="check-label"><input type="checkbox" value="4기"> 💜 4기</label>
@@ -128,14 +153,13 @@
         </div>
 
         <div class="card">
-            <!-- [수정] 엑셀 저장과 불러오기 버튼의 텍스트 크기 및 마진 정렬 통일 -->
             <div style="display:flex; gap:8px;">
                 <button class="btn green" style="flex:1; margin-top:15px;" onclick="downloadExcel()">엑셀 저장</button>
                 <label class="btn orange" style="flex:1; margin-top:15px; display:flex; align-items:center; justify-content:center;">
                     불러오기 <input type="file" hidden onchange="importExcel(event)">
                 </label>
             </div>
-            <button class="btn red" onclick="resetAllData()">⚠️ 데이터 전체 초기화</button>
+            <button class="btn red" onclick="askConfirm('모든 데이터를 삭제할까요?', resetAllData)">⚠️ 데이터 전체 초기화</button>
         </div>
     </div>
 
@@ -146,12 +170,6 @@
             <button class="sort-btn" id="sort-name" onclick="setSort('name')">이름순</button>
         </div>
         <input type="text" id="searchInput" class="input" style="margin-bottom:10px; border-color:#38bdf8;" placeholder="닉네임으로 검색..." oninput="render()">
-        <div class="card" id="detail-stats" style="padding:12px; font-size:12px; display:flex; flex-wrap:wrap; gap:10px; justify-content:space-around; background: rgba(56, 189, 248, 0.05);">
-            <div>전체: <b id="d-all">0</b></div>
-            <div>미지급: <b id="d-pending" style="color:#f87171">0</b></div>
-            <div>일부: <b id="d-partial" style="color:#fbbf24">0</b></div>
-            <div>완료: <b id="d-done" style="color:#34d399">0</b></div>
-        </div>
         <div id="list-title" style="font-weight:700; margin-bottom:10px; font-size:18px; margin-left:5px;">상세 내역</div>
         <div id="list-container"></div>
     </div>
@@ -176,12 +194,22 @@ const priceRules = {
     "고귀": { gam: 1, ju: 0, go: 1 }
 };
 
-function save() { localStorage.setItem('postcardManager', JSON.stringify(data)); }
-function resetAllData() { if(confirm('모든 데이터를 삭제할까요?')) { data = []; save(); render(); } }
-
-function toggleTheme() {
-    document.body.classList.toggle('light-mode');
+// [추가] 모달 제어 로직
+function askConfirm(msg, callback) {
+    document.getElementById('modalMessage').innerText = msg;
+    document.getElementById('customModal').style.display = 'flex';
+    document.getElementById('confirmAction').onclick = function() {
+        callback();
+        closeModal();
+    };
 }
+function closeModal() { document.getElementById('customModal').style.display = 'none'; }
+
+function save() { localStorage.setItem('postcardManager', JSON.stringify(data)); }
+
+function resetAllData() { data = []; save(); render(); }
+
+function toggleTheme() { document.body.classList.toggle('light-mode'); }
 
 function setSort(sortType) {
     currentSort = sortType;
@@ -191,12 +219,8 @@ function setSort(sortType) {
 }
 
 function batchComplete(nick) {
-    if(confirm(`[${nick}] 유저의 모든 미완료 내역을 완료 처리하시겠습니까?`)) {
-        data.forEach(item => {
-            if(item.nickname === nick) item.status = '완료';
-        });
-        save(); render();
-    }
+    data.forEach(item => { if(item.nickname === nick) item.status = '완료'; });
+    save(); render();
 }
 
 function showPage(pageId) {
@@ -214,57 +238,40 @@ function addItem() {
    
     const isDuplicate = data.some(item => item.nickname === nick);
     if (isDuplicate) {
-        if (!confirm(`⚠️ [${nick}]님은 이미 목록에 존재합니다. 추가로 등록하시겠습니까?`)) {
-            return;
-        }
+        askConfirm(`⚠️ [${nick}]님은 이미 목록에 존재합니다. 추가로 등록하시겠습니까?`, () => {
+            executeAdd(nick, selectedTypes);
+        });
+    } else {
+        executeAdd(nick, selectedTypes);
     }
+}
 
+function executeAdd(nick, selectedTypes) {
     selectedTypes.forEach(type => {
         data.unshift({
             id: Date.now() + Math.random(),
-            nickname: nick,
-            type: type,
-            amount: 1,
-            status: '미완료',
-            p_gam: 0, p_ju: 0, p_go: 0,
+            nickname: nick, type: type, amount: 1, status: '미완료', p_gam: 0, p_ju: 0, p_go: 0,
             date: new Date().toISOString()
         });
     });
     save(); render();
-    alert('추가되었습니다.');
     document.getElementById('nickname').value = '';
     document.querySelectorAll('#type-group input').forEach(cb => cb.checked = false);
 }
 
 function updateStatus(id, newStatus) {
     const item = data.find(v => v.id === id);
-    if (item) {
-        item.status = newStatus;
-        save(); render();
-    }
+    if (item) { item.status = newStatus; save(); render(); }
 }
 
 function updatePartial(id, field, val) {
     const item = data.find(v => v.id === id);
-    if (item) {
-        item[field] = Number(val) || 0;
-        save(); render();
-    }
+    if (item) { item[field] = Number(val) || 0; save(); render(); }
 }
 
-function deleteUser(nick) {
-    if(confirm(`[${nick}] 유저의 모든 데이터를 삭제하시겠습니까?`)) {
-        data = data.filter(item => item.nickname !== nick);
-        save(); render();
-    }
-}
+function deleteUser(nick) { data = data.filter(item => item.nickname !== nick); save(); render(); }
 
-function deleteItem(id) {
-    if(confirm('이 내역을 삭제하시겠습니까?')) {
-        data = data.filter(item => item.id !== id);
-        save(); render();
-    }
-}
+function deleteItem(id) { data = data.filter(item => item.id !== id); save(); render(); }
 
 function filterList(type) {
     currentFilter = type;
@@ -297,16 +304,10 @@ function render() {
 
     const tabData = currentFilter === '전체' ? base : base.filter(v => v.type === currentFilter);
 
-    document.getElementById('d-all').innerText = tabData.length;
-    document.getElementById('d-pending').innerText = tabData.filter(v => v.status === '미완료').length;
-    document.getElementById('d-partial').innerText = tabData.filter(v => v.status === '일부지급').length;
-    document.getElementById('d-done').innerText = tabData.filter(v => v.status === '완료').length;
-
     if (currentFilter === '전체') {
         const grouped = tabData.reduce((acc, curr) => {
             if (!acc[curr.nickname]) acc[curr.nickname] = { list: [], totalGam: 0, totalJu: 0, totalGo: 0 };
             acc[curr.nickname].list.push(curr);
-           
             if (curr.status !== '완료') {
                 const rule = priceRules[curr.type] || {gam:0, ju:0, go:0};
                 acc[curr.nickname].totalGam += (rule.gam * curr.amount) - (curr.p_gam || 0);
@@ -324,8 +325,8 @@ function render() {
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <span style="font-weight:800; color:#38bdf8; font-size:15px;">👤 ${nick}</span>
                     <div style="display:flex; gap:5px;">
-                        <button class="batch-btn" onclick="batchComplete('${nick}')">일괄완료</button>
-                        <button class="delete-btn" onclick="deleteUser('${nick}')">전체삭제</button>
+                        <button class="batch-btn" onclick="askConfirm('[${nick}]님의 모든 내역을 완료 처리할까요?', () => batchComplete('${nick}'))">일괄완료</button>
+                        <button class="delete-btn" onclick="askConfirm('[${nick}]님의 모든 데이터를 삭제할까요?', () => deleteUser('${nick}'))">전체삭제</button>
                     </div>
                 </div>
                 <div style="font-size:12px; color: var(--text-sub);">
@@ -350,26 +351,23 @@ function render() {
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between;">
                     <span class="status-badge status-${item.status}">${item.status}</span>
-                    <button class="delete-btn" onclick="deleteItem(${item.id})">삭제</button>
+                    <button class="delete-btn" onclick="askConfirm('이 내역을 삭제할까요?', () => deleteItem(${item.id}))">삭제</button>
                 </div>
                 <div style="font-weight:800; margin-bottom:5px; font-size:14px;">${item.nickname}</div>
                 <div style="font-size:12px; color:#34d399; margin-bottom:10px; padding:8px; background:rgba(0,0,0,0.1); border-radius:8px;">
                     💰 남은 지급액: <b>깜 ${leftGam} / 주 ${leftJu} / 고 ${leftGo}</b>
                 </div>
-               
                 <select class="input" style="padding:8px; font-size:12px; margin-top:0;" onchange="updateStatus(${item.id}, this.value)">
                     <option value="미완료" ${item.status==='미완료'?'selected':''}>미완료</option>
                     <option value="일부지급" ${item.status==='일부지급'?'selected':''}>일부지급 (수량 입력)</option>
                     <option value="완료" ${item.status==='완료'?'selected':''}>지급완료</option>
                 </select>
-
                 ${item.status === '일부지급' ? `
                 <div class="partial-input-box">
                     <div><label>깜 지급액</label><input type="number" value="${item.p_gam}" oninput="updatePartial(${item.id}, 'p_gam', this.value)"></div>
                     <div><label>주 지급액</label><input type="number" value="${item.p_ju}" oninput="updatePartial(${item.id}, 'p_ju', this.value)"></div>
                     <div><label>고 지급액</label><input type="number" value="${item.p_go}" oninput="updatePartial(${item.id}, 'p_go', this.value)"></div>
-                </div>
-                ` : ''}
+                </div>` : ''}
             `;
             listContainer.appendChild(div);
         });
