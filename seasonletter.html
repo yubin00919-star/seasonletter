@@ -6,7 +6,6 @@
     <title>마피아42 엽서 관리 Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <style>
-        /* 기본 테마 및 변수 */
         :root {
             --bg-body: #0f172a;
             --bg-card: #1e293b;
@@ -51,9 +50,24 @@
         .menu-card span { font-size:10px; opacity: 0.8; }
 
         .input, select { width:100%; background: var(--input-bg); border:1px solid var(--border); padding:12px; border-radius:12px; margin-top:8px; font-size:14px; color: var(--text-main); }
+       
         .checkbox-row { display:flex; gap:8px; margin-top:15px; flex-wrap:wrap; }
         .check-label { background: var(--bg-card); border: 1px solid var(--border); padding:10px 14px; border-radius:12px; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px; color: var(--text-main); flex:1; justify-content:center; }
-       
+        .check-label input { accent-color: #38bdf8; }
+
+        .timing-row { display:flex; gap:5px; margin-top:10px; }
+        .timing-label { flex:1; text-align:center; padding:10px; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; background: var(--input-bg); border: 1px solid var(--border); color: var(--text-sub); }
+        .timing-row input:checked + .timing-label { border-color: #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.1); }
+
+        /* 정렬 바 스타일 수정 및 추가 */
+        .sort-bar { display: flex; gap: 8px; margin-bottom: 15px; }
+        .sort-btn {
+            flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border);
+            background: var(--bg-card); color: var(--text-sub); font-size: 12px;
+            font-weight: 700; cursor: pointer; transition: 0.2s;
+        }
+        .sort-btn.active { background: #38bdf8; color: white; border-color: #38bdf8; }
+
         .btn { width:100%; border:none; padding:13px; border-radius:12px; font-weight:700; margin-top:15px; cursor:pointer; font-size:14px; }
         .primary { background:#2563eb; color:white; }
         .green { background:#059669; color:white; }
@@ -73,17 +87,17 @@
         .status-완료 { background:#064e3b; color:#34d399; }
         .status-일부지급 { background:#451a03; color:#fbbf24; }
 
+        .timing-badge { font-size:11px; font-weight:800; padding:3px 8px; border-radius:5px; display:inline-block; margin-top:5px; }
+        .time-선지급 { background:#1e3a8a; color:#93c5fd; }
+        .time-시즌말 { background:#312e81; color:#c4b5fd; }
+        .time-후지급 { background:#164e63; color:#a5f3fc; }
+
         .nav-bar { position:fixed; bottom:0; left:0; right:0; background: var(--bg-card); display:flex; justify-content:space-around; padding:12px; border-top:1px solid var(--border); z-index:100; }
         .nav-item { text-align:center; font-size:11px; color: var(--text-sub); cursor:pointer; flex:1; }
         .nav-item.active { color:#38bdf8; font-weight:700; }
         .page { display:none; }
         .page.active { display:block; }
 
-        .sort-bar { display: flex; gap: 8px; margin-bottom: 10px; }
-        .sort-btn { flex: 1; padding: 6px; font-size: 11px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text-sub); cursor: pointer; }
-        .sort-btn.active { border-color: #38bdf8; color: #38bdf8; font-weight: 700; }
-
-        /* 커스텀 모달 디자인 */
         #customModal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; padding: 20px;
@@ -101,7 +115,6 @@
 </head>
 <body>
 
-<!-- 커스텀 모달 레이아웃 -->
 <div id="customModal">
     <div class="modal-content">
         <div class="modal-text" id="modalMessage">메시지 내용</div>
@@ -132,11 +145,26 @@
         <div class="card">
             <div style="font-weight:700; margin-bottom:5px;">새 거래 추가</div>
             <input class="input" id="nickname" placeholder="상대방 닉네임 입력">
+           
+            <div style="font-size: 12px; color: var(--text-sub); margin-top: 15px;">엽서 종류 (중복 선택 가능)</div>
             <div class="checkbox-row" id="type-group">
                 <label class="check-label"><input type="checkbox" value="세배"> 🧧 세배</label>
                 <label class="check-label"><input type="checkbox" value="4기"> 💜 4기</label>
                 <label class="check-label"><input type="checkbox" value="고귀"> 💎 고귀</label>
             </div>
+
+            <div style="font-size: 12px; color: var(--text-sub); margin-top: 15px;">지급 시기 (택 1)</div>
+            <div class="timing-row">
+                <input type="radio" name="timing" id="t1" value="선지급" hidden checked>
+                <label for="t1" class="timing-label">선지급</label>
+               
+                <input type="radio" name="timing" id="t2" value="시즌말" hidden>
+                <label for="t2" class="timing-label">시즌말</label>
+               
+                <input type="radio" name="timing" id="t3" value="후지급" hidden>
+                <label for="t3" class="timing-label">후지급</label>
+            </div>
+
             <button class="btn primary" onclick="addItem()">목록에 추가하기</button>
         </div>
 
@@ -194,12 +222,10 @@ const priceRules = {
     "고귀": { gam: 1, ju: 0, go: 1 }
 };
 
-// 모달 제어 함수 (showCancel 파라미터 추가로 단순 알림/선택창 구분)
 function askConfirm(msg, callback, showCancel = true) {
     document.getElementById('modalMessage').innerText = msg;
     document.getElementById('customModal').style.display = 'flex';
     document.getElementById('cancelAction').style.display = showCancel ? 'block' : 'none';
-   
     document.getElementById('confirmAction').onclick = function() {
         if (callback) callback();
         closeModal();
@@ -207,11 +233,8 @@ function askConfirm(msg, callback, showCancel = true) {
 }
 
 function closeModal() { document.getElementById('customModal').style.display = 'none'; }
-
 function save() { localStorage.setItem('postcardManager', JSON.stringify(data)); }
-
 function resetAllData() { data = []; save(); render(); }
-
 function toggleTheme() { document.body.classList.toggle('light-mode'); }
 
 function setSort(sortType) {
@@ -236,6 +259,7 @@ function showPage(pageId) {
 function addItem() {
     const nick = document.getElementById('nickname').value.trim();
     const selectedTypes = Array.from(document.querySelectorAll('#type-group input:checked')).map(cb => cb.value);
+    const timing = document.querySelector('input[name="timing"]:checked').value;
    
     if (selectedTypes.length === 0 || !nick) {
         askConfirm('닉네임과 종류를 선택해주세요!', null, false);
@@ -245,26 +269,25 @@ function addItem() {
     const isDuplicate = data.some(item => item.nickname === nick);
     if (isDuplicate) {
         askConfirm(`⚠️ [${nick}]님은 이미 목록에 존재합니다. 추가로 등록하시겠습니까?`, () => {
-            executeAdd(nick, selectedTypes);
+            executeAdd(nick, selectedTypes, timing);
         });
     } else {
-        executeAdd(nick, selectedTypes);
+        executeAdd(nick, selectedTypes, timing);
     }
 }
 
-function executeAdd(nick, selectedTypes) {
+function executeAdd(nick, selectedTypes, timing) {
     selectedTypes.forEach(type => {
         data.unshift({
             id: Date.now() + Math.random(),
-            nickname: nick, type: type, amount: 1, status: '미완료', p_gam: 0, p_ju: 0, p_go: 0,
+            nickname: nick, type: type, amount: 1, status: '미완료',
+            timing: timing,
+            p_gam: 0, p_ju: 0, p_go: 0,
             date: new Date().toISOString()
         });
     });
     save(); render();
-   
-    // 안내창 띄우기
     askConfirm('성공적으로 추가되었습니다! 🎉', null, false);
-   
     document.getElementById('nickname').value = '';
     document.querySelectorAll('#type-group input').forEach(cb => cb.checked = false);
 }
@@ -280,7 +303,6 @@ function updatePartial(id, field, val) {
 }
 
 function deleteUser(nick) { data = data.filter(item => item.nickname !== nick); save(); render(); }
-
 function deleteItem(id) { data = data.filter(item => item.id !== id); save(); render(); }
 
 function filterList(type) {
@@ -340,7 +362,7 @@ function render() {
                     </div>
                 </div>
                 <div style="font-size:12px; color: var(--text-sub);">
-                    ${user.list.map(it => `<div style="margin-bottom:4px;">• ${it.type} [${it.status}]</div>`).join('')}
+                    ${user.list.map(it => `<div style="margin-bottom:4px;">• ${it.type} [${it.status}] <span class="timing-badge time-${it.timing || '선지급'}">${it.timing || '선지급'}</span></div>`).join('')}
                     <div style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.2); border-radius:10px; color:#fbbf24;">
                         <b>💰 남은 정산:</b> 깜 ${user.totalGam} / 주 ${user.totalJu} / 고 ${user.totalGo}
                     </div>
@@ -355,6 +377,7 @@ function render() {
             const leftGam = isDone ? 0 : (rule.gam * item.amount) - item.p_gam;
             const leftJu = isDone ? 0 : (rule.ju * item.amount) - item.p_ju;
             const leftGo = isDone ? 0 : (rule.go * item.amount) - item.p_go;
+            const timing = item.timing || '선지급';
 
             const div = document.createElement('div');
             div.className = 'list-item';
@@ -364,10 +387,12 @@ function render() {
                     <button class="delete-btn" onclick="askConfirm('이 내역을 삭제할까요?', () => deleteItem(${item.id}))">삭제</button>
                 </div>
                 <div style="font-weight:800; margin-bottom:5px; font-size:14px;">${item.nickname}</div>
-                <div style="font-size:12px; color:#34d399; margin-bottom:10px; padding:8px; background:rgba(0,0,0,0.1); border-radius:8px;">
+                <div style="font-size:12px; color:#34d399; margin-bottom:5px; padding:8px; background:rgba(0,0,0,0.1); border-radius:8px;">
                     💰 남은 지급액: <b>깜 ${leftGam} / 주 ${leftJu} / 고 ${leftGo}</b>
+                    <br>
+                    <div class="timing-badge time-${timing}" style="margin-top:8px;">${timing}</div>
                 </div>
-                <select class="input" style="padding:8px; font-size:12px; margin-top:0;" onchange="updateStatus(${item.id}, this.value)">
+                <select class="input" style="padding:8px; font-size:12px; margin-top:5px;" onchange="updateStatus(${item.id}, this.value)">
                     <option value="미완료" ${item.status==='미완료'?'selected':''}>미완료</option>
                     <option value="일부지급" ${item.status==='일부지급'?'selected':''}>일부지급 (수량 입력)</option>
                     <option value="완료" ${item.status==='완료'?'selected':''}>지급완료</option>
